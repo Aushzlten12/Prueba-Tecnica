@@ -7,8 +7,8 @@ POST http://localhost:5098/productos
 Content-Type: application/json
 
 {
-  "name": "Mouse",
-  "price": 390.90
+  "nombre": "Audifonos",
+  "precio": 390.90
 }
 
 ###

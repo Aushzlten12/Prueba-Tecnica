@@ -1,7 +1,9 @@
 import React from "react";
-import { List, Button, Skeleton } from "antd";
+import { List, Button, Skeleton, Typography } from "antd";
 
-const ProductList = ({ products, loading }) => {
+const { Text } = Typography;
+
+const ProductList = ({ products, loading, error }) => {
   if (loading) {
     return (
       <div style={{ textAlign: "center", marginTop: 12 }}>
@@ -10,10 +12,19 @@ const ProductList = ({ products, loading }) => {
     );
   }
 
+  if (error) {
+    return (
+      <div style={{ textAlign: "center", marginTop: 12 }}>
+        <Text type="danger">
+          Error al cargar los productos: {error.message}
+        </Text>
+      </div>
+    );
+  }
+
   return (
     <div>
       <List
-        className="demo-loadmore-list"
         itemLayout="horizontal"
         bordered
         dataSource={products}
@@ -25,17 +36,21 @@ const ProductList = ({ products, loading }) => {
               alignItems: "center",
             }}
             actions={[
-              <Button type="primary" key="view">
-                Editar
+              <Button type="dashed" key="view">
+                Producto
               </Button>,
-              <Button type="default" key="add">
-                Agregar
+              <Button
+                type="default"
+                key="delete"
+                style={{ fontWeight: "bold" }}
+              >
+                {item.id}
               </Button>,
             ]}
           >
             <List.Item.Meta
               title={item.nombre}
-              description={`${item.precio} soles`}
+              description={`${item.precio.toFixed(2)} soles`}
             />
           </List.Item>
         )}
