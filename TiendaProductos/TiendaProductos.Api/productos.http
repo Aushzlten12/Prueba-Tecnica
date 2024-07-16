@@ -1,0 +1,24 @@
+GET http://localhost:5098/productos
+###
+GET http://localhost:5098/productos/1
+
+###
+POST http://localhost:5098/productos
+Content-Type: application/json
+
+{
+  "name": "Mouse",
+  "price": 390.90
+}
+
+###
+PUT http://localhost:5098/productos/1 
+Content-Type: application/json
+
+{
+  "name": "Televisor",
+  "price": 1500.00
+}
+
+###
+DELETE http://localhost:5098/productos/4
