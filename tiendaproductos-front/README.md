@@ -1,70 +1,304 @@
-# Getting Started with Create React App
+# Tienda de Productos - Frontend
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Se ha usado React como se pidio en los requerimientos de la prueba además de Ant Design una librería de componentes.
 
-## Available Scripts
+## Hook
+Se necesito de un Hook que en este caso es **useFetch** para realizar acciones en el backend antes creado con .NET
 
-In the project directory, you can run:
+```js
+import { useState, useEffect, useCallback } from "react";
 
-### `npm start`
+const useFetch = (url) => {
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [postLoading, setPostLoading] = useState(false);
+  const [postError, setPostError] = useState(null);
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await fetch(url);
+        console.log(response);
+        if (!response.ok) throw new Error();
+        const result = await response.json();
+        console.log(result);
+        setData(result);
+      } catch (err) {
+        setError(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [url]);
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+  const postData = useCallback(
+    async (postData) => {
+      setPostLoading(true);
+      setPostError(null);
+      // console.log(postData);
+      let DtoProducto = {
+        name: postData.nombre,
+        price: postData.precio,
+      };
+      // console.log(DtoProducto);
+      try {
+        const response = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(DtoProducto),
+        });
+        if (!response.ok) throw new Error();
+        const result = await response.json();
+        // console.log(result);
+        return result;
+      } catch (err) {
+        setPostError(err);
+        console.log(err);
+      } finally {
+        setPostLoading(false);
+      }
+    },
+    [url]
+  );
 
-### `npm test`
+  return {
+    data,
+    loading,
+    error,
+    postLoading,
+    postError,
+    postData,
+  };
+};
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+export default useFetch;
+```
 
-### `npm run build`
+Ya que se pedía mostrar una lista de productos y que se pueda agregar productos solo usamos el método GET y POST de la API.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## Home
+El contenido principal es el siguiente:
+```js
+import React, { useState, useEffect } from "react";
+import useFetch from "../hooks/useFetch";
+import ProductList from "../components/ProductList";
+import { Typography } from "antd";
+import ProductForm from "../components/Form";
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+const { Title } = Typography;
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+const Home = () => {
+  const [products, setProducts] = useState([]);
+  const { loading, error, data } = useFetch("http://localhost:5098/productos");
 
-### `npm run eject`
+  useEffect(() => {
+    if (data) {
+      setProducts(data);
+    }
+  }, [data]);
+  return (
+    <div>
+      <Title style={{ textAlign: "center" }}>Lista de Productos</Title>
+      <ProductForm
+        onProductAdded={(newProduct) =>
+          setProducts((prevProducts) => [...prevProducts, newProduct])
+        }
+      />
+      <ProductList products={products} loading={loading} error={error} />
+    </div>
+  );
+};
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+export default Home;
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+Este cuenta con dos componentes los cuales son: el formulario como *ProductForm* y la lista de productos como *ProductList*.
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+# Form
+```js 
+import React from "react";
+import { Form, Input, InputNumber, Button, message } from "antd";
+import useFetch from "./../hooks/useFetch";
 
-## Learn More
+const ProductForm = ({ onProductAdded }) => {
+  const { postData, postLoading } = useFetch("http://localhost:5098/productos");
+  const [form] = Form.useForm();
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+  const onFinish = async (values) => {
+    try {
+      const result = await postData(values);
+      if (result) {
+        message.success("Producto agregado exitosamente!");
+        form.resetFields();
+        onProductAdded(result);
+      }
+    } catch {
+      message.error("Error al agregar el producto: ");
+    }
+  };
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+  return (
+    <Form
+      form={form}
+      name="productForm"
+      onFinish={onFinish}
+      layout="vertical"
+      initialValues={{
+        nombre: "",
+        precio: 1,
+      }}
+    >
+      <Form.Item
+        name="nombre"
+        label="Nombre del Producto"
+        rules={[
+          {
+            required: true,
+            message: "Por favor ingrese el nombre del producto",
+          },
+          {
+            type: "string",
+            max: 50,
+            message:
+              "El nombre del producto no puede tener más de 50 caracteres",
+          },
+        ]}
+      >
+        <Input placeholder="Nombre del Producto" />
+      </Form.Item>
 
-### Code Splitting
+      <Form.Item
+        name="precio"
+        label="Precio"
+        rules={[
+          {
+            required: true,
+            message: "Por favor ingrese el precio del producto",
+          },
+          {
+            type: "number",
+            min: 1,
+            max: 50000,
+            message: "El precio debe estar entre 1 y 50000",
+          },
+        ]}
+      >
+        <InputNumber
+          min={1}
+          placeholder="Precio"
+          style={{ width: "100%" }}
+          step={0.01}
+        />
+      </Form.Item>
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+      <Form.Item>
+        <Button type="primary" htmlType="submit" loading={postLoading}>
+          Agregar Producto
+        </Button>
+      </Form.Item>
+    </Form>
+  );
+};
 
-### Analyzing the Bundle Size
+export default ProductForm;
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+```
+Haciendo uso de la librería Ant, para poder crear un formulario según los requerimientos y contando con validaciones necesarias.
 
-### Making a Progressive Web App
+# List
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+```js 
+import React from "react";
+import { List, Button, Skeleton, Typography } from "antd";
 
-### Advanced Configuration
+const { Text } = Typography;
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+const ProductList = ({ products, loading, error }) => {
+  if (loading) {
+    return (
+      <div style={{ textAlign: "center", marginTop: 12 }}>
+        <Skeleton active />
+      </div>
+    );
+  }
 
-### Deployment
+  if (error) {
+    return (
+      <div style={{ textAlign: "center", marginTop: 12 }}>
+        <Text type="danger">
+          Error al cargar los productos: {error.message}
+        </Text>
+      </div>
+    );
+  }
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+  return (
+    <div>
+      <List
+        itemLayout="horizontal"
+        bordered
+        dataSource={products}
+        renderItem={(item) => (
+          <List.Item
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+            actions={[
+              <Button type="dashed" key="view">
+                Producto
+              </Button>,
+              <Button
+                type="default"
+                key="delete"
+                style={{ fontWeight: "bold" }}
+              >
+                {item.id}
+              </Button>,
+            ]}
+          >
+            <List.Item.Meta
+              title={item.nombre}
+              description={`${item.precio.toFixed(2)} soles`}
+            />
+          </List.Item>
+        )}
+      />
+    </div>
+  );
+};
 
-### `npm run build` fails to minify
+export default ProductList;
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+```
+Mostrando los productos haciendo uso de **useFetch** y de la librería Ant-Design, se colocó en cada Item, su nombre, precio y su id.
+
+La idea en el futuro sería agregar botones para editar y poder eliminar ciertos productos, pero eso no se ha requerido para esta prueba.
+
+# Images
+
+Se muestra el funcionamiento de la aplicación
+
+![inicio](/tiendaproductos-front//images/inicio.PNG)
+
+Se tiene un formulario para agregar productos en la parte superior y debajo se muestra la lista de productos.
+
+![validation-name](/tiendaproductos-front/images/validationName.PNG)
+
+Se muestra la validación para el nombre del producto, con la cantidad maxima de 50 caracteres.
+
+![validation-price](/tiendaproductos-front/images/validationPricce.PNG)
+
+La validación también para el precio, que en este caso debe estar en un rango entre 1 y 50000 es decir no negativos tampoco.
+
+![new-product](/tiendaproductos-front/images/newProduct.PNG)
+
+El resultado de agregar un producto
