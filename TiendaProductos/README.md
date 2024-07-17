@@ -184,3 +184,24 @@ dotnet run
 ```
 
 ### Images
+
+Primero verificamos que la conexión a la base de datos MySQL este funcionando de manera correcta.
+
+![conecction-sql](/TiendaProductos/TiendaProductos.Api/images/SQL-connection.PNG)
+
+Ahora verificamos los endpoints enviando solicitudes HTTP.
+
+![get](/TiendaProductos/TiendaProductos.Api/images/GET.PNG)
+![id6](/TiendaProductos/TiendaProductos.Api/images/sameName.PNG)
+
+Vemos que tenemos elementos con el mismo nombre entonces vamos a modificar uno de ellos con el método PUT
+
+![put](/TiendaProductos/TiendaProductos.Api/images/PUT.PNG)
+![id6-put](/TiendaProductos/TiendaProductos.Api/images/id7.PNG)
+
+Ahora verificamos el método DELETE
+
+![delete](/TiendaProductos/TiendaProductos.Api/images/DELETE.PNG)
+![noId6](/TiendaProductos/TiendaProductos.Api/images/NoId6.PNG)
+
+El método POST se verifica en el frontend ya que sin este el frontend en React no estaría completo
